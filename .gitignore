@@ -1,5 +1,16 @@
+# Songs folder
 songs
+
+# Secrets
 .env
+
+# Python
 *.pyc
 .venv
 venv
+
+# Database
+*.db
+
+# whatever this is
+melodai.egg-info

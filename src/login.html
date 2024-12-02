@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MelodAI Login</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+
+      .auth-container {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        opacity: 0;
+        animation: fadeIn 0.5s ease-in-out 2.2s forwards;
+      }
+
+      .form-group {
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #333;
+      }
+
+      input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+      }
+
+      button {
+        width: 100%;
+        padding: 0.75rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        margin-top: 1rem;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      .error {
+        color: #dc3545;
+        margin-top: 1rem;
+        text-align: center;
+        transition: color 0.3s ease;
+      }
+
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      button:disabled:hover {
+        background: #ccc;
+      }
+
+      .toggle-form {
+        text-align: center;
+        margin-top: 1rem;
+        color: #007bff;
+        cursor: pointer;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .logo {
+        width: 120px;
+        height: 120px;
+        display: block;
+        margin: 0 auto 1rem;
+      }
+
+      .checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .checkbox input[type='checkbox'] {
+        width: 18px;
+        height: 18px;
+        margin: 0;
+        cursor: pointer;
+        accent-color: #007bff;
+      }
+
+      .checkbox label {
+        margin: 0;
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .checkbox:hover input[type='checkbox'] {
+        outline: 1px solid #007bff;
+      }
+
+      .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f0f0f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        animation: fadeOut 0.5s ease-in-out 2s forwards;
+      }
+
+      .loading-logo {
+        width: 150px;
+        height: 150px;
+        animation: dropIn 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+        transform: translateY(-100vh);
+      }
+
+      @keyframes dropIn {
+        0% {
+          transform: translateY(-100vh);
+        }
+        60% {
+          transform: translateY(20px);
+        }
+        80% {
+          transform: translateY(-10px);
+        }
+        100% {
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeOut {
+        from {
+          opacity: 1;
+          visibility: visible;
+        }
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loading-overlay">
+      <img src="/static/logo.svg" alt="MelodAI Logo" class="loading-logo" />
+    </div>
+
+    <div class="auth-container">
+      <img src="/static/logo.svg" alt="MelodAI Logo" class="logo" />
+
+      <div id="loginForm">
+        <h1>Login</h1>
+        <form>
+          <div class="form-group">
+            <label for="loginUsername">Username</label>
+            <input type="text" id="loginUsername" required />
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" required />
+          </div>
+          <div class="form-group checkbox">
+            <input type="checkbox" id="rememberMe" />
+            <label for="rememberMe">Remember me</label>
+          </div>
+          <button type="submit">Login</button>
+          <div class="toggle-form" onclick="toggleForm('register')">
+            Need an account? Register
+          </div>
+          <div class="toggle-form" onclick="toggleForm('forgot')">
+            Forgot Password?
+          </div>
+          <div id="loginError" class="error"></div>
+        </form>
+      </div>
+
+      <div id="registerForm" style="display: none">
+        <h1>Register</h1>
+        <form>
+          <div class="form-group">
+            <label for="registerUsername">Username</label>
+            <input type="text" id="registerUsername" required />
+          </div>
+          <div class="form-group">
+            <label for="registerPassword">Password</label>
+            <input
+              type="password"
+              id="registerPassword"
+              required
+              oninput="validatePasswords()"
+            />
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              required
+              oninput="validatePasswords()"
+            />
+          </div>
+          <button type="submit" id="registerButton" disabled>Register</button>
+          <div id="registerError" class="error"></div>
+        </form>
+        <!-- Back to login -->
+        <div class="toggle-form" onclick="toggleForm('login')">
+          Back to Login
+        </div>
+      </div>
+
+      <div id="forgotPasswordForm" style="display: none">
+        <h1>Reset Password</h1>
+        <form>
+          <div class="form-group">
+            <label for="resetUsername">Username</label>
+            <input type="text" id="resetUsername" required />
+          </div>
+          <button type="submit">Send Reset Link</button>
+          <div class="toggle-form" onclick="toggleForm('login')">
+            Back to Login
+          </div>
+          <div id="resetError" class="error"></div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function toggleForm(form) {
+        document.getElementById('loginForm').style.display =
+          form === 'login' ? 'block' : 'none'
+        document.getElementById('registerForm').style.display =
+          form === 'register' ? 'block' : 'none'
+        document.getElementById('forgotPasswordForm').style.display =
+          form === 'forgot' ? 'block' : 'none'
+      }
+
+      document
+        .getElementById('loginForm')
+        .addEventListener('submit', function (e) {
+          e.preventDefault()
+          login()
+        })
+
+      document
+        .getElementById('registerForm')
+        .addEventListener('submit', function (e) {
+          e.preventDefault()
+          register()
+        })
+
+      document
+        .getElementById('forgotPasswordForm')
+        .addEventListener('submit', function (e) {
+          e.preventDefault()
+          forgotPassword()
+        })
+
+      async function login() {
+        const username = document.getElementById('loginUsername').value
+        const password = document.getElementById('loginPassword').value
+        const rememberMe = document.getElementById('rememberMe').checked
+
+        try {
+          const response = await fetch('/auth/login', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username,
+              password,
+              remember_me: rememberMe,
+            }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            window.location.href = window.location.href.split('=')[1] || '/'
+          } else {
+            document.getElementById('loginError').textContent = data.error
+          }
+        } catch (error) {
+          document.getElementById('loginError').textContent =
+            'An error occurred. Please try again.'
+        }
+      }
+
+      async function register() {
+        const username = document.getElementById('registerUsername').value
+        const password = document.getElementById('registerPassword').value
+        const confirmPassword = document.getElementById('confirmPassword').value
+
+        if (password !== confirmPassword) {
+          document.getElementById('registerError').textContent =
+            'Passwords do not match'
+          return
+        }
+
+        try {
+          const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            document.getElementById('registerError').textContent = data.message
+            setTimeout(() => toggleForm('login'), 2000)
+          } else {
+            document.getElementById('registerError').textContent = data.error
+          }
+        } catch (error) {
+          document.getElementById('registerError').textContent =
+            'An error occurred. Please try again.'
+        }
+      }
+
+      async function forgotPassword() {
+        const username = document.getElementById('resetUsername').value
+
+        try {
+          const response = await fetch('/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok) {
+            document.getElementById('resetError').textContent = data.message
+            document.getElementById('resetError').style.color = '#198754'
+          } else {
+            document.getElementById('resetError').textContent = data.error
+            document.getElementById('resetError').style.color = '#dc3545'
+          }
+        } catch (error) {
+          document.getElementById('resetError').textContent =
+            'An error occurred. Please try again.'
+        }
+      }
+
+      function validatePasswords() {
+        const password = document.getElementById('registerPassword').value
+        const confirmPassword = document.getElementById('confirmPassword').value
+        const errorElement = document.getElementById('registerError')
+        const registerButton = document.getElementById('registerButton')
+
+        if (password === '' || confirmPassword === '') {
+          errorElement.textContent = ''
+          registerButton.disabled = true
+          return
+        }
+
+        if (password === confirmPassword) {
+          errorElement.textContent = '✓ Passwords match'
+          errorElement.style.color = '#198754' // Bootstrap success color
+          registerButton.disabled = false
+        } else {
+          errorElement.textContent = '✗ Passwords do not match'
+          errorElement.style.color = '#dc3545' // Bootstrap danger color
+          registerButton.disabled = true
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetch('/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          })
+          window.location.href = '/login.html'
+        } catch (error) {
+          console.error('Error logging out:', error)
+        }
+      }
+
+      // Add this function to handle unauthorized responses
+      function handleUnauthorized(response) {
+        if (response.status === 401) {
+          response.json().then((data) => {
+            if (data.redirect) {
+              window.location.href = data.redirect
+            }
+          })
+          return true
+        }
+        return false
+      }
+
+      // Add this to your fetch wrapper
+      function addAuthHandling() {
+        const originalFetch = window.fetch
+        window.fetch = async function () {
+          try {
+            const response = await originalFetch.apply(this, arguments)
+            if (handleUnauthorized(response)) {
+              return new Promise(() => {}) // Prevent further processing
+            }
+            return response
+          } catch (error) {
+            throw error
+          }
+        }
+      }
+
+      // Call this when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        addAuthHandling()
+      })
+    </script>
+  </body>
+</html>

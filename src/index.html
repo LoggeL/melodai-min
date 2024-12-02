@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MelodAI</title>
+    <link rel="icon" href="/logo.svg" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+
+    <style>
+      :root {
+        --primary: #6366f1;
+        --primary-dark: #4f46e5;
+        --secondary: #0ea5e9;
+        --success: #22c55e;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --background: #f8fafc;
+        --surface: #ffffff;
+        --text: #1e293b;
+        --text-light: #64748b;
+        --border: #6366f1;
+        --hover: #f1f5f9;
+      }
+
+      /* Dark theme */
+      [data-theme='dark'] {
+        --primary: #818cf8;
+        --primary-dark: #6366f1;
+        --secondary: #38bdf8;
+        --success: #4ade80;
+        --danger: #f87171;
+        --warning: #fbbf24;
+        --background: #0f172a;
+        --surface: #1e293b;
+        --text: #f1f5f9;
+        --text-light: #94a3b8;
+        --border: #334155;
+        --hover: #334155;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: var(--background);
+        color: var(--text);
+        display: flex;
+        gap: 20px;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      body.collapsed {
+        gap: 0;
+      }
+
+      .side-container {
+        background: var(--surface);
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+        max-height: calc(100vh - 80px);
+        overflow-y: auto;
+        height: calc(100vh - 80px);
+        display: flex;
+        flex-direction: column;
+        max-width: 400px;
+        transition: max-width 0.3s, opacity 0.3s, padding 0.3s;
+      }
+
+      body.collapsed .side-container {
+        max-width: 0;
+        opacity: 0;
+        padding: 0;
+      }
+
+      .search-container {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      .logo-container img {
+        width: 50%;
+      }
+
+      .search-input {
+        width: calc(100% - 24px);
+        padding: 10px;
+        border-radius: 4px;
+        border: 2px solid var(--border);
+        margin-bottom: 10px;
+      }
+
+      .search-input:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      .search-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        max-height: 300px;
+        overflow-y: auto;
+        display: none;
+      }
+
+      .search-dropdown.active {
+        display: block;
+      }
+
+      .search-result {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+      }
+
+      .search-result:hover {
+        background: var(--hover);
+      }
+
+      .search-result img {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        object-fit: cover;
+      }
+
+      .queue-item {
+        padding: 10px;
+        margin: 5px 0;
+        background: var(--background);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background-color 0.2s;
+        position: relative;
+      }
+
+      .queue-item.error {
+        background: var(--danger);
+        cursor: not-allowed;
+      }
+
+      .queue-item:hover {
+        background: var(--hover);
+      }
+
+      .queue-item.active {
+        background: var(--primary);
+        color: white;
+      }
+
+      .queue-item img {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      .controls {
+        background: var(--surface);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .progress {
+        height: 10px;
+        background: var(--primary);
+        border-radius: 4px;
+        width: 0;
+        transition: width 0.1s;
+      }
+
+      .progress-bar {
+        background: var(--background);
+        border-radius: 4px;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      .progress-time {
+        display: flex;
+        margin-bottom: 10px;
+      }
+
+      .thumbnail {
+        width: 100%;
+        max-height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+
+      .volume-controls {
+        display: grid;
+        grid-template-columns: 100px 1fr;
+        gap: 10px;
+        align-items: center;
+        margin: 10px 0;
+      }
+
+      .lyrics-container {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        background: var(--surface);
+        border-radius: 8px;
+        min-height: 0;
+        height: calc(100vh - 80px);
+        position: relative;
+        min-height: 200px;
+      }
+
+      .lyrics-skeleton {
+        padding: 1rem;
+      }
+
+      .skeleton-line {
+        height: 24px;
+        background: linear-gradient(
+          90deg,
+          var(--hover) 25%,
+          var(--surface) 50%,
+          var(--hover) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+        margin: 8px 0;
+      }
+
+      .skeleton-line:nth-child(4n) {
+        width: 100%;
+      }
+
+      .skeleton-line:nth-child(4n + 2) {
+        width: 85%;
+      }
+      .skeleton-line:nth-child(4n + 3) {
+        width: 70%;
+      }
+      .skeleton-line:nth-child(4n + 4) {
+        width: 90%;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      .lyrics {
+        text-align: center;
+        font-size: 1.5rem;
+        line-height: 1.6;
+        margin: 2rem 0;
+        min-height: 200px;
+      }
+
+      .lyrics.loading {
+        display: none;
+      }
+
+      .lyrics-line {
+        margin: 20px 0;
+        padding: 10px;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+      }
+
+      .lyrics-line.active {
+        background: color-mix(in srgb, var(--primary), white 90%);
+      }
+
+      .word {
+        display: inline-block;
+        margin-right: 5px;
+        padding: 2px 4px;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .word.active {
+        background: color-mix(in srgb, var(--warning), white 70%);
+      }
+
+      /* Speaker colors */
+      .speaker-SPEAKER_00 {
+        background-color: #22d3ee30;
+      }
+
+      .speaker-SPEAKER_01 {
+        background-color: #f472b630;
+      }
+
+      .speaker-SPEAKER_02 {
+        background-color: #34d39930;
+      }
+
+      .speaker-SPEAKER_03 {
+        background-color: #fbbf2430;
+      }
+
+      .speaker-SPEAKER_04 {
+        background-color: #818cf830;
+      }
+
+      .speaker-SPEAKER_05 {
+        background-color: #fb718530;
+      }
+
+      .word {
+        display: inline-block;
+        margin-right: 5px;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background: var(--primary-dark);
+      }
+
+      .now-playing {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
+      .button-container {
+        display: flex;
+        gap: 10px;
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+      }
+
+      /* Add this theme toggle button style */
+      .theme-toggle {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text);
+      }
+
+      .theme-toggle:hover {
+        background: var(--hover);
+      }
+
+      .menu-toggle {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        color: var(--text);
+      }
+
+      .menu-toggle:hover {
+        background: var(--hover);
+      }
+
+      /* Add smooth transitions for theme changes */
+      * {
+        transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+      }
+
+      /* Dark mode specific adjustments */
+      [data-theme='dark'] .auth-container {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+      }
+
+      [data-theme='dark'] .card {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+      }
+
+      [data-theme='dark'] input {
+        background: var(--background);
+        color: var(--text);
+      }
+
+      [data-theme='dark'] .search-result:hover {
+        background: var(--hover);
+      }
+
+      [data-theme='dark'] .lyrics-line.active {
+        background: color-mix(in srgb, var(--primary), var(--surface) 70%);
+      }
+
+      [data-theme='dark'] .word.active {
+        background: color-mix(in srgb, var(--warning), var(--surface) 70%);
+      }
+
+      [data-theme='dark'] .status-pending {
+        background: color-mix(in srgb, var(--warning), var(--surface) 80%);
+      }
+
+      [data-theme='dark'] .status-approved {
+        background: color-mix(in srgb, var(--success), var(--surface) 80%);
+      }
+
+      /* Dark mode speaker colors */
+      [data-theme='dark'] .speaker-SPEAKER_00 {
+        background-color: #06b5d430;
+      }
+      [data-theme='dark'] .speaker-SPEAKER_01 {
+        background-color: #ec489930;
+      }
+      [data-theme='dark'] .speaker-SPEAKER_02 {
+        background-color: #10b98130;
+      }
+      [data-theme='dark'] .speaker-SPEAKER_03 {
+        background-color: #d9770630;
+      }
+      [data-theme='dark'] .speaker-SPEAKER_04 {
+        background-color: #6366f130;
+      }
+      [data-theme='dark'] .speaker-SPEAKER_05 {
+        background-color: #e11d4830;
+      }
+
+      .queue-status {
+        font-size: 0.7em;
+        color: var(--text-light);
+        margin-top: 2px;
+      }
+
+      .progress-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 2px;
+        background: var(--primary);
+        transition: width 0.3s ease;
+      }
+
+      .lyrics-header {
+        padding: 20px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .lyrics-artist {
+        color: var(--text-light);
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+      }
+
+      .lyrics-title {
+        margin: 0;
+        color: var(--text);
+        font-size: 1.5rem;
+      }
+
+      .player-controls {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        align-items: center;
+        margin: 1rem 0;
+      }
+
+      .control-btn {
+        background: none;
+        border: none;
+        color: var(--text);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+      }
+
+      .control-btn:hover {
+        background: var(--hover);
+      }
+
+      .control-btn.active {
+        color: var(--primary);
+      }
+
+      .control-btn.muted {
+        color: var(--danger);
+      }
+
+      .play-btn {
+        font-size: 1.75rem;
+        min-width: 48px;
+        height: 48px;
+        background: var(--primary);
+        color: white;
+      }
+
+      .play-btn:hover {
+        background: var(--primary-dark);
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  </head>
+
+  <body>
+    <div class="button-container">
+      <button
+        class="theme-toggle"
+        onclick="toggleTheme()"
+        aria-label="Toggle theme"
+      >
+        <svg
+          id="theme-icon"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <!-- Sun icon path -->
+          <path
+            class="sun"
+            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 17.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z"
+          />
+          <!-- Moon icon path -->
+          <path
+            class="moon"
+            d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+          />
+        </svg>
+      </button>
+      <button
+        class="menu-toggle"
+        onclick="toggleMenu()"
+        aria-label="Toggle menu"
+      >
+        <!-- Burger menu icon -->
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" x2="21" y1="12" y2="12"></line>
+          <line x1="3" x2="21" y1="6" y2="6"></line>
+          <line x1="3" x2="21" y1="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="side-container">
+      <!-- Search -->
+      <div class="search-container">
+        <div class="logo-container">
+          <img src="/logo.svg" alt="logo" class="logo" />
+        </div>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search for a song..."
+        />
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+      <div class="controls">
+        <div class="now-playing" id="nowPlaying">Select a song to begin</div>
+        <div class="progress-bar">
+          <div class="progress" id="progress"></div>
+        </div>
+        <div class="progress-time">
+          <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+        </div>
+        <div class="player-controls">
+          <button class="control-btn" id="previousSong">
+            <i class="fas fa-backward-step"></i>
+          </button>
+          <button class="control-btn play-btn" id="playButton">
+            <i class="fas fa-play"></i>
+          </button>
+          <button class="control-btn" id="nextSong">
+            <i class="fas fa-forward-step"></i>
+          </button>
+          <button class="control-btn" id="randomSong">
+            <i class="fas fa-random"></i>
+          </button>
+          <button class="control-btn" id="toggleFullscreen">
+            <i class="fas fa-expand"></i>
+          </button>
+        </div>
+
+        <div class="volume-controls">
+          <label>Vocals:</label>
+          <input
+            type="range"
+            id="vocalsVolume"
+            min="0"
+            max="1"
+            step="0.1"
+            value="0.5"
+          />
+        </div>
+        <div class="volume-controls">
+          <label>Music:</label>
+          <input
+            type="range"
+            id="musicVolume"
+            min="0"
+            max="1"
+            step="0.1"
+            value="0.5"
+          />
+        </div>
+      </div>
+      <h2>Song Queue</h2>
+      <div id="songQueue"></div>
+    </div>
+
+    <div class="lyrics-container" id="lyricsContainer">
+      <div class="lyrics-header">
+        <div class="lyrics-title"></div>
+        <div class="lyrics-artist"></div>
+      </div>
+      <div class="lyrics">
+        <h2>Select a song to start</h2>
+      </div>
+    </div>
+
+    <script>
+      class KaraokePlayer {
+        constructor() {
+          this.vocalsAudio = new Audio()
+          this.musicAudio = new Audio()
+          this.lyrics = null
+          this.playing = false
+          this.currentWordIndex = 0
+          this.currentSongIndex = -1
+
+          this.socket = io('')
+          this.setupSocketListeners()
+
+          // Sample song queue (in real app, this might come from an API)
+          this.songQueue = []
+
+          this.setupControls()
+          this.renderQueue()
+        }
+
+        setupSocketListeners() {
+          this.socket.on('track_ready', (data) => {
+            const song = this.songQueue.find((s) => s.id == data.track_id)
+            if (song) {
+              song.ready = true
+              song.status = ''
+              this.updateQueue()
+              console.log('track_ready', data)
+            }
+          })
+
+          this.socket.on('track_progress', (data) => {
+            const song = this.songQueue.find((s) => s.id == data.track_id)
+            if (song) {
+              song.ready = song.progress < 100 ? false : true
+              song.progress = data.progress
+              song.status = data.status
+              this.updateQueue()
+            }
+          })
+
+          this.socket.on('track_error', (data) => {
+            const song = this.songQueue.find((s) => s.id == data.track_id)
+            if (song) {
+              song.status = data.error
+              song.error = true
+              this.updateQueue()
+            }
+          })
+        }
+
+        async loadLyrics(lyricsUrl) {
+          try {
+            // Clear lyrics
+            this.lyrics = null
+            document.getElementById('lyricsContainer').innerHTML = `
+            <div class="lyrics-header">
+              <div class="lyrics-title">
+                <div class="skeleton-line"></div>
+              </div>
+              <div class="lyrics-artist">
+                <div class="skeleton-line"></div>
+              </div>
+            </div>
+            <div class="lyrics-skeleton">
+              ${Array.from({ length: 30 })
+                .map(() => '<div class="skeleton-line"></div>')
+                .join('')}
+            </div>
+            `
+
+            const response = await fetch(lyricsUrl)
+            const data = await response.json()
+
+            // Iterate through the segments / words and split if the speaker changes
+            let segments = []
+            data.segments.forEach((segment) => {
+              let currentSegment = {
+                start: segment.start,
+                end: segment.end,
+                words: [],
+              }
+              let currentSpeaker = segment.words[0].speaker
+              segment.words.forEach((word, i) => {
+                let nextWord =
+                  i < segment.words.length - 1 ? segment.words[i + 1] : word
+                if (
+                  word.speaker &&
+                  currentSpeaker &&
+                  word.speaker !== currentSpeaker &&
+                  nextWord.speaker === word.speaker
+                ) {
+                  segments.push(currentSegment)
+                  currentSegment = {
+                    start: word.start,
+                    end: word.end,
+                    words: [],
+                  }
+                  currentSpeaker = word.speaker
+                } else {
+                  currentSpeaker = word.speaker
+                }
+                currentSegment.words.push(word)
+              })
+              segments.push(currentSegment)
+            })
+
+            this.lyrics = segments
+            setTimeout(() => this.renderLyrics(), 1000)
+            // this.renderLyrics()
+          } catch (error) {
+            console.error('Error loading lyrics:', error)
+          }
+        }
+
+        renderLyrics() {
+          if (!this.lyrics) return
+
+          const container = document.getElementById('lyricsContainer')
+
+          container.innerHTML = ''
+
+          const song = this.songQueue[this.currentSongIndex]
+
+          const header = document.createElement('div')
+          const title = document.createElement('h2')
+          const artist = document.createElement('div')
+          const lyrics = document.createElement('div')
+
+          header.classList.add('lyrics-header')
+          title.classList.add('lyrics-title')
+          artist.classList.add('lyrics-artist')
+          lyrics.classList.add('lyrics-lyrics')
+
+          artist.textContent = song.artist
+          title.textContent = song.title
+
+          header.appendChild(artist)
+          header.appendChild(title)
+          container.appendChild(header)
+
+          this.lyrics.forEach((segment, segmentIndex) => {
+            const lineDiv = document.createElement('div')
+            lineDiv.classList.add('lyrics-line')
+            lineDiv.id = `line-${segmentIndex}`
+
+            // Get unique speakers and add speaker classes
+            const speakers = new Set(segment.words.map((word) => word.speaker))
+            speakers.forEach((speaker) => {
+              if (speaker) lineDiv.classList.add(`speaker-${speaker}`)
+            })
+
+            segment.words.forEach((word, wordIndex) => {
+              const wordSpan = document.createElement('span')
+              wordSpan.classList.add('word')
+              wordSpan.id = `word-${segmentIndex}-${wordIndex}`
+              wordSpan.dataset.start = word.start
+              wordSpan.dataset.end = word.end
+              wordSpan.textContent = word.word
+
+              // Add space after each word except the last one
+              if (wordIndex < segment.words.length - 1) {
+                lineDiv.appendChild(wordSpan)
+                lineDiv.appendChild(document.createTextNode(' '))
+              } else {
+                lineDiv.appendChild(wordSpan)
+              }
+            })
+
+            container.appendChild(lineDiv)
+          })
+        }
+
+        jumpToTime(time) {
+          this.vocalsAudio.currentTime = time
+          this.musicAudio.currentTime = time
+        }
+
+        clickProgressBar(e) {
+          const rect = e.target.getBoundingClientRect()
+          const x = e.clientX - rect.left
+          const width = rect.width
+          const progress = x / width
+          const time = progress * this.vocalsAudio.duration
+          this.jumpToTime(time)
+        }
+
+        startLyricsSync() {
+          const checkTime = () => {
+            if (!this.playing) return
+
+            const currentTime = this.vocalsAudio.currentTime
+
+            // Update progress bar
+            const progress = (currentTime / this.vocalsAudio.duration) * 100
+            document.getElementById('progress').style.width = `${progress}%`
+
+            // Update current time
+            const minutes = Math.floor(currentTime / 60)
+            const seconds = Math.floor(currentTime % 60)
+            document.getElementById(
+              'currentTime'
+            ).textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`
+
+            // Update active line
+            this.lyrics.forEach((segment, segmentIndex) => {
+              const lineElement = document.getElementById(
+                `line-${segmentIndex}`
+              )
+              if (currentTime >= segment.start && currentTime <= segment.end) {
+                lineElement.classList.add('active')
+                // Scroll to active line
+              } else {
+                lineElement.classList.remove('active')
+              }
+
+              // Update active words within the line
+              segment.words.forEach((word, wordIndex) => {
+                const wordElement = document.getElementById(
+                  `word-${segmentIndex}-${wordIndex}`
+                )
+                if (currentTime >= word.start && currentTime <= word.end) {
+                  wordElement.classList.add('active')
+                  // Scroll to active word
+                  wordElement.scrollIntoView({ block: 'center' })
+                } else {
+                  wordElement.classList.remove('active')
+                }
+              })
+            })
+
+            requestAnimationFrame(checkTime)
+          }
+
+          requestAnimationFrame(checkTime)
+        }
+
+        async loadSong(index) {
+          console.log('loadSong', index)
+          if (index === null || index < 0 || index >= this.songQueue.length)
+            return
+
+          this.currentSongIndex = index
+          const song = this.songQueue[index]
+
+          this.updateQueueHighlight()
+
+          // Update UI elements
+          document.getElementById(
+            'nowPlaying'
+          ).textContent = `Now Playing: ${song.title}`
+
+          // Reset player state
+          this.playing = false
+          this.vocalsAudio.src = song.vocalsUrl
+          this.musicAudio.src = song.musicUrl
+          document
+            .querySelector('#playButton i')
+            .classList.replace('fa-pause', 'fa-play')
+
+          // Update total time
+          this.vocalsAudio.onloadedmetadata = () => {
+            const minutes = Math.floor(this.vocalsAudio.duration / 60)
+            const seconds = Math.floor(this.vocalsAudio.duration % 60)
+            document.getElementById(
+              'totalTime'
+            ).textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`
+
+            // Reset progress bar
+            document.getElementById('progress').style.width = '0'
+          }
+
+          // Load lyrics
+          this.loadLyrics(song.lyricsUrl)
+        }
+
+        renderQueue() {
+          const queueContainer = document.getElementById('songQueue')
+          queueContainer.innerHTML = this.songQueue
+            .map(
+              (song, index) => `
+                  <div id="queue-${song.id}"
+                       class="queue-item ${
+                         index === this.currentSongIndex ? 'active' : ''
+                       }">
+                      <img src="${song.thumbnail}" alt="${song.title}">
+                      <div>
+                          <div>${song.title}</div>
+                          <div style="font-size: 0.8em">${song.artist}</div>
+                          <div class="queue-status">${this.getStatus(
+                            song
+                          )}</div>
+                      </div>
+                      <div class="progress-overlay" style="width: ${
+                        song.progress || 0
+                      }%"></div>
+                  </div>
+              `
+            )
+            .join('')
+          this.updateQueue()
+        }
+
+        getStatus(song) {
+          if (!song.status) return ''
+
+          const statusMap = {
+            starting: 'Starting...',
+            downloading: 'Downloading...',
+            downloaded: 'Downloaded',
+            splitting: 'Splitting audio...',
+            lyrics_extracted: 'Lyrics extracted...',
+            lyrics_chunked: 'Lyrics chunked...',
+            extracting_lyrics: 'Extracting lyrics...',
+            lyrics_complete: 'Lyrics extracted',
+            error: 'Error processing track',
+          }
+
+          return statusMap[song.status] || song.status
+        }
+
+        updateQueue() {
+          this.songQueue.forEach((song, index) => {
+            const queueItem = document.getElementById(`queue-${song.id}`)
+            if (queueItem) {
+              queueItem.style.opacity = song.ready ? 1 : 0.7
+              queueItem.style.cursor = song.ready ? 'pointer' : 'not-allowed'
+              queueItem.style.cursor = song.error
+                ? 'not-allowed'
+                : queueItem.style.cursor
+
+              if (index === this.currentSongIndex) {
+                queueItem.classList.add('active')
+              } else {
+                queueItem.classList.remove('active')
+              }
+
+              // onclick if ready and doesn't already exist
+              if (song.ready && !queueItem.onclick) {
+                queueItem.onclick = () => this.loadSong(index)
+              }
+
+              if (song.error) {
+                queueItem.classList.add('error')
+              } else {
+                queueItem.classList.remove('error')
+              }
+
+              // Update status and progress
+              const statusDiv = queueItem.querySelector('.queue-status')
+              if (statusDiv) {
+                statusDiv.innerText = this.getStatus(song)
+              }
+
+              // Update progress bar
+              const existingProgress =
+                queueItem.querySelector('.progress-overlay')
+              if (existingProgress) {
+                existingProgress.style.width = `${song.progress || 0}%`
+              }
+            }
+          })
+        }
+
+        updateQueueHighlight() {
+          console.log('updateQueueHighlight', this.currentSongIndex)
+          if (this.currentSongIndex === -1) return
+          const items = document.querySelectorAll('.queue-item')
+          items.forEach((item) => {
+            item.classList.remove('active')
+          })
+          items[this.currentSongIndex].classList.add('active')
+        }
+
+        setupControls() {
+          document
+            .getElementById('playButton')
+            .addEventListener('click', () => this.togglePlay())
+          document
+            .getElementById('previousSong')
+            .addEventListener('click', () => this.previousSong())
+          document
+            .getElementById('nextSong')
+            .addEventListener('click', () => this.nextSong())
+          document
+            .getElementById('randomSong')
+            .addEventListener('click', () => this.randomSong())
+          document
+            .getElementById('toggleFullscreen')
+            .addEventListener('click', () => this.toggleFullscreen())
+
+          document
+            .getElementById('vocalsVolume')
+            .addEventListener('input', (e) => {
+              this.vocalsAudio.volume = e.target.value
+            })
+
+          document
+            .getElementById('musicVolume')
+            .addEventListener('input', (e) => {
+              this.musicAudio.volume = e.target.value
+            })
+
+          // Keep audio tracks synchronized
+          this.vocalsAudio.addEventListener('play', () =>
+            this.musicAudio.play()
+          )
+          this.vocalsAudio.addEventListener('pause', () =>
+            this.musicAudio.pause()
+          )
+          this.vocalsAudio.addEventListener('ended', () => this.nextSong())
+        }
+
+        togglePlay() {
+          if (this.currentSongIndex === -1) return
+
+          if (this.playing) {
+            this.vocalsAudio.pause()
+            this.playing = false
+            document
+              .querySelector('#playButton i')
+              .classList.replace('fa-pause', 'fa-play')
+          } else {
+            this.vocalsAudio.play()
+            this.playing = true
+            this.startLyricsSync()
+            document
+              .querySelector('#playButton i')
+              .classList.replace('fa-play', 'fa-pause')
+          }
+        }
+
+        previousSong() {
+          if (this.currentSongIndex > 0) {
+            this.loadSong(this.currentSongIndex - 1)
+          }
+        }
+
+        nextSong() {
+          if (this.currentSongIndex < this.songQueue.length - 1) {
+            this.loadSong(this.currentSongIndex + 1)
+          }
+        }
+
+        handleSearch(e) {
+          // check if enter key is pressed
+          if (e.key !== 'Enter') return
+
+          const query = e.target.value
+
+          const dropdown = document.getElementById('searchDropdown')
+          if (query.length < 2) {
+            dropdown.classList.remove('active')
+            return
+          }
+          fetch('/search?q=' + query)
+            .then((response) => response.json())
+            .then((data) => {
+              // Show results
+              dropdown.innerHTML = data
+                .map(
+                  (song) => `
+                    <div class="search-result" onclick="karaokePlayer.addToQueue({id: ${song.id}, title: '${song.title}', artist: '${song.artist}', thumb: '${song.thumb}', ready: false})">
+                        <img src="${song.thumb}" alt="${song.title}">
+                        <div>
+                            <div><strong>${song.title}</strong></div>
+                            <div style="font-size: 0.8em; color: #666;">${song.artist}</div>
+                        </div>
+                    </div>
+                `
+                )
+                .join('')
+
+              dropdown.classList.add('active')
+            })
+        }
+
+        addToQueue(song) {
+          if (this.songQueue.some((item) => item.id === song.id)) {
+            return alert('Song is already in the queue')
+          }
+
+          this.songQueue.push({
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            thumbnail: song.thumb,
+            vocalsUrl: 'songs/' + song.id + '/vocals.mp3',
+            musicUrl: 'songs/' + song.id + '/no_vocals.mp3',
+            lyricsUrl: 'songs/' + song.id + '/lyrics.json',
+            ready: false,
+            progress: 0,
+            status: 'downloading',
+          })
+
+          this.renderQueue()
+          document.getElementById('searchDropdown').classList.remove('active')
+          document.querySelector('.search-input').value = ''
+
+          fetch('/add?id=' + song.id)
+            .then((response) => response.json())
+            .catch((error) => {
+              console.error('Error adding track:', error)
+            })
+        }
+
+        async randomSong() {
+          try {
+            // Get all track IDs currently in the queue
+            const queueIds = this.songQueue.map((song) => song.id)
+
+            const response = await fetch('/random', {
+              method: 'POST', // Changed to POST to send data
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                exclude_ids: queueIds,
+              }),
+            })
+            const data = await response.json()
+
+            if (response.ok) {
+              this.songQueue.push({
+                id: data.track_id,
+                title: data.metadata.title,
+                artist: data.metadata.artist,
+                thumbnail: `https://e-cdns-images.dzcdn.net/images/cover/${data.metadata.cover}/250x250-000000-80-0-0.jpg`,
+                vocalsUrl: `songs/${data.track_id}/vocals.mp3`,
+                musicUrl: `songs/${data.track_id}/no_vocals.mp3`,
+                lyricsUrl: `songs/${data.track_id}/lyrics.json`,
+                ready: true,
+                progress: 100,
+                status: '',
+              })
+
+              this.renderQueue()
+              // Load and play the random song immediately
+              this.loadSong(this.songQueue.length - 1)
+            } else {
+              console.error('Error getting random song:', data.error)
+            }
+          } catch (error) {
+            console.error('Error:', error)
+          }
+        }
+
+        toggleFullscreen() {
+          const i = document.querySelector('#toggleFullscreen i')
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen()
+            i.classList.replace('fa-expand', 'fa-compress')
+          } else {
+            document.exitFullscreen()
+            i.classList.replace('fa-compress', 'fa-expand')
+          }
+        }
+      }
+
+      // Initialize the player when the page loads
+      let karaokePlayer
+      window.addEventListener('DOMContentLoaded', () => {
+        karaokePlayer = new KaraokePlayer()
+        document
+          .querySelector('.progress-bar')
+          .addEventListener('click', (e) => karaokePlayer.clickProgressBar(e))
+        document
+          .querySelector('.search-input')
+          .addEventListener('keyup', karaokePlayer.handleSearch)
+      })
+
+      function debounce(func, wait) {
+        let timeout
+        return function (...args) {
+          clearTimeout(timeout)
+          timeout = setTimeout(() => func.apply(this, args), wait)
+        }
+      }
+
+      // Theme management
+      function getTheme() {
+        return localStorage.getItem('theme') || 'light'
+      }
+
+      function setTheme(theme) {
+        localStorage.setItem('theme', theme)
+        document.documentElement.setAttribute('data-theme', theme)
+        updateThemeIcon(theme)
+      }
+
+      function updateThemeIcon(theme) {
+        const sunPath = document.querySelector('.sun')
+        const moonPath = document.querySelector('.moon')
+
+        if (theme === 'dark') {
+          sunPath.style.display = 'none'
+          moonPath.style.display = 'block'
+        } else {
+          sunPath.style.display = 'block'
+          moonPath.style.display = 'none'
+        }
+      }
+
+      function toggleTheme() {
+        const currentTheme = getTheme()
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light'
+        setTheme(newTheme)
+      }
+
+      function toggleMenu() {
+        document.body.classList.toggle('collapsed')
+      }
+
+      // Initialize theme
+      document.addEventListener('DOMContentLoaded', () => {
+        setTheme(getTheme())
+      })
+    </script>
+  </body>
+</html>

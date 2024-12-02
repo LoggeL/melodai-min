@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MelodAI Admin</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+      }
+
+      .card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1rem;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background: #f8f9fa;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .approve-btn {
+        background: #28a745;
+        color: white;
+      }
+
+      .approve-btn:hover {
+        background: #218838;
+      }
+
+      .btn-container {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .home-btn {
+        background: #007bff;
+        color: white;
+        margin-right: 1rem;
+      }
+
+      .home-btn:hover {
+        background: #0056b3;
+      }
+
+      .logout-btn {
+        background: #dc3545;
+        color: white;
+      }
+
+      .logout-btn:hover {
+        background: #c82333;
+      }
+
+      .status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+      }
+
+      .status-pending {
+        background: #ffeeba;
+        color: #856404;
+      }
+
+      .status-approved {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      .tab-container {
+        margin-bottom: 1rem;
+      }
+
+      .tab {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 1rem;
+        color: #6c757d;
+      }
+
+      .tab.active {
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+      }
+
+      .filters {
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 1rem;
+      }
+
+      .filters input,
+      .filters select {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .pagination {
+        margin-top: 1rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pagination button {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+
+      .pagination button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .stat-card {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #e9ecef;
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .stat-card h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1rem;
+        color: #6c757d;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .stat-card p {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #007bff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      th {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      th:hover {
+        background: #e9ecef;
+      }
+
+      .sort-asc::after {
+        content: ' ↑';
+      }
+
+      .sort-desc::after {
+        content: ' ↓';
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>MelodAI Admin Dashboard</h1>
+        <div class="btn-container">
+          <button class="home-btn" onclick="window.location.href = '/'">
+            Home
+          </button>
+          <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="tab-container">
+        <button class="tab active" onclick="showTab('users')">Users</button>
+        <button class="tab" onclick="showTab('usage')">Usage Logs</button>
+      </div>
+
+      <div id="usersTab" class="card">
+        <h2>User Management</h2>
+        <table id="usersTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable('usersTable', 0)">Username ↕</th>
+              <th onclick="sortTable('usersTable', 1)">Created At ↕</th>
+              <th onclick="sortTable('usersTable', 2)">Status ↕</th>
+              <th onclick="sortTable('usersTable', 3)">Last Online ↕</th>
+              <th onclick="sortTable('usersTable', 4)">Activity Count ↕</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="usageTab" class="card" style="display: none">
+        <h2>Usage Logs</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Users</h3>
+            <p id="totalUsers">-</p>
+          </div>
+          <div class="stat-card">
+            <h3>Total Downloads</h3>
+            <p id="totalDownloads">-</p>
+          </div>
+          <div class="stat-card">
+            <h3>Total Searches</h3>
+            <p id="totalSearches">-</p>
+          </div>
+          <div class="stat-card">
+            <h3>Random Plays</h3>
+            <p id="totalRandomPlays">-</p>
+          </div>
+          <div class="stat-card">
+            <h3>Most Active User</h3>
+            <p id="mostActiveUser">-</p>
+          </div>
+        </div>
+        <div class="filters">
+          <input
+            type="text"
+            id="usernameFilter"
+            placeholder="Filter by username"
+            onchange="loadUsageLogs(1)"
+          />
+          <select id="actionFilter" onchange="loadUsageLogs(1)">
+            <option value="">All actions</option>
+            <option value="download">Download</option>
+            <option value="search">Search</option>
+            <option value="random_play">Random Play</option>
+          </select>
+          <select id="perPage" onchange="loadUsageLogs(1)">
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="200">200 per page</option>
+          </select>
+        </div>
+
+        <div id="usageTable">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Action</th>
+                <th>Track ID</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <button onclick="loadUsageLogs(currentPage - 1)" id="prevPage">
+            Previous
+          </button>
+          <span id="pageInfo">Page 1 of 1</span>
+          <button onclick="loadUsageLogs(currentPage + 1)" id="nextPage">
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function formatTimeAgo(dateString) {
+        const date = new Date(dateString)
+        const now = new Date()
+        const diffInSeconds = Math.floor((now - date) / 1000)
+
+        if (diffInSeconds < 60) return 'Just now'
+        if (diffInSeconds < 3600)
+          return `${Math.floor(diffInSeconds / 60)}m ago`
+        if (diffInSeconds < 86400)
+          return `${Math.floor(diffInSeconds / 3600)}h ago`
+        if (diffInSeconds < 604800)
+          return `${Math.floor(diffInSeconds / 86400)}d ago`
+        return date.toLocaleDateString()
+      }
+
+      let currentSort = {
+        column: null,
+        direction: 'asc',
+      }
+
+      function sortTable(tableId, column) {
+        const table = document.getElementById(tableId)
+        const headers = table.getElementsByTagName('th')
+
+        // Update sort direction
+        if (currentSort.column === column) {
+          currentSort.direction =
+            currentSort.direction === 'asc' ? 'desc' : 'asc'
+        } else {
+          currentSort.column = column
+          currentSort.direction = 'asc'
+        }
+
+        // Update header classes
+        Array.from(headers).forEach((header) => {
+          header.classList.remove('sort-asc', 'sort-desc')
+        })
+        headers[column].classList.add(`sort-${currentSort.direction}`)
+
+        // Sort the rows
+        const tbody = table.getElementsByTagName('tbody')[0]
+        const rows = Array.from(tbody.getElementsByTagName('tr'))
+
+        rows.sort((a, b) => {
+          let aValue = a.cells[column].textContent
+          let bValue = b.cells[column].textContent
+
+          // Handle different column types
+          if (column === 1 || column === 3) {
+            // dates
+            aValue = new Date(aValue)
+            bValue = new Date(bValue)
+          } else if (column === 4) {
+            // numbers
+            aValue = parseInt(aValue)
+            bValue = parseInt(bValue)
+          }
+
+          if (aValue < bValue) return currentSort.direction === 'asc' ? -1 : 1
+          if (aValue > bValue) return currentSort.direction === 'asc' ? 1 : -1
+          return 0
+        })
+
+        // Reorder the table
+        rows.forEach((row) => tbody.appendChild(row))
+      }
+
+      async function loadUsers() {
+        try {
+          const response = await fetch('/admin/users', {
+            credentials: 'include',
+          })
+          const users = await response.json()
+
+          const tbody = document.querySelector('#usersTable tbody')
+          tbody.innerHTML = users
+            .map(
+              (user) => `
+            <tr>
+              <td>${user.username}</td>
+              <td>${new Date(user.created_at).toLocaleString()}</td>
+              <td>
+                <span class="status ${
+                  user.is_approved ? 'status-approved' : 'status-pending'
+                }">
+                  ${user.is_approved ? 'Approved' : 'Pending'}
+                </span>
+              </td>
+              <td>${
+                user.last_online ? formatTimeAgo(user.last_online) : 'Never'
+              }</td>
+              <td>${user.activity_count}</td>
+              <td>
+                ${
+                  !user.is_approved
+                    ? `<button class="approve-btn" onclick="approveUser(${user.id})">Approve</button>`
+                    : ''
+                }
+              </td>
+            </tr>
+          `
+            )
+            .join('')
+        } catch (error) {
+          console.error('Error loading users:', error)
+        }
+      }
+
+      let currentPage = 1
+
+      async function loadUsageLogs(page = 1) {
+        try {
+          const username = document.getElementById('usernameFilter').value
+          const action = document.getElementById('actionFilter').value
+          const perPage = document.getElementById('perPage').value
+
+          const params = new URLSearchParams({
+            page,
+            per_page: perPage,
+          })
+
+          if (username) params.append('username', username)
+          if (action) params.append('action', action)
+
+          const response = await fetch(`/admin/usage?${params}`, {
+            credentials: 'include',
+          })
+          const data = await response.json()
+
+          currentPage = page
+
+          const tbody = document.querySelector('#usageTable tbody')
+          tbody.innerHTML = data.logs
+            .map(
+              (log) => `
+                <tr>
+                    <td>${log.username}</td>
+                    <td>${log.action}</td>
+                    <td>${log.track_id}</td>
+                    <td>${new Date(log.created_at).toLocaleString()}</td>
+                </tr>
+            `
+            )
+            .join('')
+
+          // Update pagination controls
+          document.getElementById(
+            'pageInfo'
+          ).textContent = `Page ${page} of ${data.total_pages}`
+          document.getElementById('prevPage').disabled = page <= 1
+          document.getElementById('nextPage').disabled =
+            page >= data.total_pages
+        } catch (error) {
+          console.error('Error loading usage logs:', error)
+        }
+      }
+
+      async function approveUser(userId) {
+        try {
+          const response = await fetch(`/admin/users/${userId}/approve`, {
+            method: 'POST',
+            credentials: 'include',
+          })
+          if (response.ok) {
+            loadUsers()
+          }
+        } catch (error) {
+          console.error('Error approving user:', error)
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetch('/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          })
+          window.location.href = '/login.html'
+        } catch (error) {
+          console.error('Error logging out:', error)
+        }
+      }
+
+      function showTab(tabName) {
+        document.querySelectorAll('.tab').forEach((tab) => {
+          tab.classList.remove('active')
+        })
+        document
+          .querySelector(`.tab[onclick="showTab('${tabName}')"]`)
+          .classList.add('active')
+
+        document.getElementById('usersTab').style.display =
+          tabName === 'users' ? 'block' : 'none'
+        document.getElementById('usageTab').style.display =
+          tabName === 'usage' ? 'block' : 'none'
+
+        if (tabName === 'users') {
+          loadUsers()
+        } else if (tabName === 'usage') {
+          loadUsageLogs()
+          loadStats()
+        }
+      }
+
+      async function loadStats() {
+        try {
+          const response = await fetch('/admin/stats', {
+            credentials: 'include',
+          })
+          const stats = await response.json()
+
+          document.getElementById('totalUsers').textContent = stats.total_users
+          document.getElementById('totalDownloads').textContent =
+            stats.total_downloads
+          document.getElementById('totalSearches').textContent =
+            stats.total_searches
+          document.getElementById('totalRandomPlays').textContent =
+            stats.total_random_plays
+          document.getElementById('mostActiveUser').textContent =
+            stats.most_active_user
+              ? `${stats.most_active_user.username} (${stats.most_active_user.count})`
+              : '-'
+        } catch (error) {
+          console.error('Error loading stats:', error)
+        }
+      }
+
+      // Add this to your initialization code
+      document.addEventListener('DOMContentLoaded', () => {
+        // Initialize
+        loadUsers()
+      })
+    </script>
+  </body>
+</html>
